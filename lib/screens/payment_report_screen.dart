@@ -33,7 +33,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
   String? selectedStatus;
   String? selectedResponsible;
   int currentPage = 0;
-  int itemsPerPage = 10;
+  int itemsPerPage = 50; // Changed to 50 as per request
 
   List<Map<String, dynamic>> paginatedData = [];
 
@@ -133,6 +133,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
         paymentHistory = historyData;
         filteredHistory = List.from(paymentHistory);
         isLoading = false;
+        filterData(); // Call filterData after initial fetch to set up pagination
       });
     } catch (e) {
       print("Error fetching payment history: $e");
@@ -210,7 +211,12 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
 // Apply pagination
     int start = currentPage * itemsPerPage;
     int end = start + itemsPerPage;
-    if (start >= flatList.length) start = 0; // Reset if out of range
+    if (start >= flatList.length) { // Reset current page if it goes out of bounds after filtering
+      currentPage = 0;
+      start = 0;
+      end = start + itemsPerPage;
+    }
+
 
     paginatedData = flatList.sublist(
       start,
@@ -226,6 +232,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
       selectedMethod = null;
       selectedStatus = null;
       selectedResponsible = null;
+      currentPage = 0; // Reset page when clearing filters
     });
     filterData();
   }
@@ -555,6 +562,8 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
     List<String> responsibles =
     paymentHistory.map((e) => e['responsible'].toString()).toSet().toList();
 
+    int totalPages = (filteredHistory.length / itemsPerPage).ceil();
+
     return Animate(
       effects: [FadeEffect(duration: 600.ms), MoveEffect(begin: Offset(0, 30))],
       child: Scaffold(
@@ -688,6 +697,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                           onChanged: (value) {
                             setState(() {
                               searchTerm = value;
+                              currentPage = 0; // Reset page on new search term
                               filterData();
                             });
                           },
@@ -728,6 +738,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedMethod = value;
+                                    currentPage = 0; // Reset page on filter change
                                     filterData();
                                   });
                                 },
@@ -761,6 +772,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedStatus = value;
+                                    currentPage = 0; // Reset page on filter change
                                     filterData();
                                   });
                                 },
@@ -786,6 +798,7 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedResponsible = value;
+                                    currentPage = 0; // Reset page on filter change
                                     filterData();
                                   });
                                 },
@@ -863,9 +876,9 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredHistory.length,
+                  itemCount: paginatedData.length, // Display paginated data
                   itemBuilder: (context, index) {
-                    final entry = filteredHistory[index];
+                    final entry = paginatedData[index]; // Use paginatedData
 
                     // Timestamp parsing
                     final timestampValue = entry['timestamp'];
@@ -954,7 +967,42 @@ class _PaymentReportScreenState extends State<PaymentReportScreen> {
                     );
                   },
                 ),
-
+                // Pagination Controls
+                if (totalPages > 1) // Only show controls if there's more than 1 page
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back, color: isDarkMode ? darkModeIconColor : lightModeIconColor),
+                          onPressed: currentPage > 0
+                              ? () {
+                            setState(() {
+                              currentPage--;
+                              filterData();
+                            });
+                          }
+                              : null,
+                        ),
+                        Text(
+                          '${currentPage + 1} / $totalPages',
+                          style: TextStyle(fontSize: 16, color: isDarkMode ? darkModeTextColor : lightModeTextColor),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.arrow_forward, color: isDarkMode ? darkModeIconColor : lightModeIconColor),
+                          onPressed: currentPage < totalPages - 1
+                              ? () {
+                            setState(() {
+                              currentPage++;
+                              filterData();
+                            });
+                          }
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

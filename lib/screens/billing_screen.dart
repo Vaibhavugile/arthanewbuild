@@ -264,15 +264,15 @@ class _BillingScreenState extends State<BillingScreen> {
       bluetoothPrinter.printNewLine();
 
       // Header
-      bluetoothPrinter.printCustom("       My Fine Dine", 3, 1);
-      bluetoothPrinter.printCustom("Branch: $branchCode", 1, 1);
+      bluetoothPrinter.printCustom("My Fine Dine", 3, 1);
+      // bluetoothPrinter.printCustom("Branch: $branchCode", 1, 1);
       bluetoothPrinter.printCustom("Date: ${dateTime.toLocal().toString().split('.').first}", 1, 1);
       bluetoothPrinter.printNewLine();
 
       // Order Info
       bluetoothPrinter.printCustom("Table No: $tableNumber", 1, 0);
-      bluetoothPrinter.printCustom("Status: $orderStatus", 1, 0);
-      bluetoothPrinter.printCustom("Payment: $paymentMethod", 1, 0);
+     // bluetoothPrinter.printCustom("Status: $orderStatus", 1, 0);
+     // bluetoothPrinter.printCustom("Payment: $paymentMethod", 1, 0);
       bluetoothPrinter.printNewLine();
 
       // Item list header
@@ -295,16 +295,16 @@ class _BillingScreenState extends State<BillingScreen> {
       bluetoothPrinter.printCustom("--------------------------------", 1, 1);
 
       // Totals
-      final tax = totalPrice * 0.05;
-      const discount = 0.0;
-      final grandTotal = totalPrice + tax - discount;
+      //final tax = totalPrice * 0.05;
+    //  const discount = 0.0;
+    //  final grandTotal = totalPrice + tax - discount;
 
       bluetoothPrinter.printCustom("Subtotal           ${totalPrice.toStringAsFixed(2)}", 1, 2);
-      bluetoothPrinter.printCustom("Tax (5%)           ${tax.toStringAsFixed(2)}", 1, 2);
-      if (discount > 0) {
-        bluetoothPrinter.printCustom("Discount          -${discount.toStringAsFixed(2)}", 1, 2);
-      }
-      bluetoothPrinter.printCustom("Total              ${grandTotal.toStringAsFixed(2)}", 2, 2);
+     // bluetoothPrinter.printCustom("Tax (5%)           ${tax.toStringAsFixed(2)}", 1, 2);
+      //if (discount > 0) {
+      //  bluetoothPrinter.printCustom("Discount          -${discount.toStringAsFixed(2)}", 1, 2);
+      // }
+     // bluetoothPrinter.printCustom("Total              ${grandTotal.toStringAsFixed(2)}", 2, 2);
       bluetoothPrinter.printNewLine();
 
       // Footer

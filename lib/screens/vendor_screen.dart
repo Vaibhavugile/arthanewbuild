@@ -98,7 +98,7 @@ class _VendorScreenState extends State<VendorScreen> {
     final Color webContentBackgroundDark = Colors.grey[900]!;
 
     final Color webSelectedNavItemBackground = appBarGradientMid;
-    final Color webSelectedNavItemContentColor = Colors.white;
+    final Color webSelectedNavItemContentColor = Colors.black87;
 
     final Color webUnselectedNavItemColorLight = lightModeCardTextColor;
     final Color webUnselectedNavItemColorDark = darkModeTextColor;

@@ -1,5 +1,5 @@
 name: art
-description: "A new Flutter project."
+description: "Jaha Anna Waha Parcha"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase dependencies
+  # Firebase
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.4
   cloud_firestore: ^4.15.4
@@ -35,17 +35,23 @@ dependencies:
   flutter_animate: ^4.2.0
   animations: ^2.0.7
   dropdown_button2: ^1.0.0
-  google_fonts: ^5.1.0
+  google_fonts: 4.0.4
   lucide_icons: ^0.257.0
   fl_chart: ^0.63.0
   fluttertoast: ^8.0.9
 
-  # Printers & Bluetooth
+  # Printers & Bluetooth (mobile)
   esc_pos_printer: ^4.1.0
-  esc_pos_utils: ^1.1.0
   esc_pos_utils_plus: ^2.0.1+6
   flutter_bluetooth_serial: ^0.4.0
   blue_thermal_printer: ^1.1.5
+  universal_platform: ^1.0.0+1 # For platform detection
+  # REMOVE THIS LINE: printing: ^5.9.3
+  html: ^0.15.0+1 # Add this for web DOM manipulation
+  # PDF generation (used by both mobile & web)
+  pdf: ^3.8.4
+    # Web Printing & Platform Utilities (Add these two)
+  # ✅ Compatible with current setup
 
   # Utilities
   uuid: ^4.1.0
@@ -55,9 +61,6 @@ dependencies:
   collection: ^1.18.0
   connectivity_plus: ^5.0.2
   share_plus: ^7.2.2
-
-  # PDF & Printing
-  pdf: ^3.8.4
 
   # Localization
   flutter_localizations:
@@ -69,13 +72,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^2.0.0
   intl_utils: ^2.8.4
-  flutter_launcher_icons: ^0.11.0 # ✅ Added
+  flutter_launcher_icons: ^0.11.0
 
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png" # ✅ Your icon path here
-  min_sdk_android: 21 # Optional: use if minSdk is 21+
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true

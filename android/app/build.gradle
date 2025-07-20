@@ -36,6 +36,20 @@ android {
         }
     }
 
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
+                if (variant.buildType.name == 'release') {
+                    output.outputFileName = "annaparcha.apk"
+                }
+                // You can add other conditions for debug or other build types if needed
+                // else if (variant.buildType.name == 'debug') {
+                //    output.outputFileName = "annaparcha-debug.apk"
+                // }
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
