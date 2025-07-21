@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'kot_screen.dart';
 
-// Define a breakpoint for web/mobile layout switching
-const double _webBreakpoint = 800.0;
+// Define breakpoints for different layouts
+const double _mobileBreakpoint = 600.0; // Typical phone portrait/small tablet
+const double _tabletBreakpoint = 900.0; // Typical tablet portrait/large phone landscape
+const double _webBreakpoint = 1200.0; // Typical desktop/large tablet landscape
 
 class MenuPage extends StatefulWidget {
   final String tableId;
@@ -503,9 +505,29 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
     }
   }
 
-  // --- Mobile Layout Specific Widget Tree ---
-  Widget _buildMobileLayout() {
+  // --- Mobile/Tablet Layout Specific Widget Tree ---
+  Widget _buildAdaptiveGridLayout(double screenWidth) {
     final subcategories = grouped.keys.toList();
+
+    // Determine crossAxisCount based on total screenWidth
+    int crossAxisCount;
+    if (screenWidth > _webBreakpoint) {
+      crossAxisCount = 5; // For very wide screens (larger desktop or large landscape tablets)
+    } else if (screenWidth > _tabletBreakpoint) {
+      crossAxisCount = 4; // For tablets in landscape or larger portrait
+    } else if (screenWidth > _mobileBreakpoint) {
+      crossAxisCount = 3; // For smaller tablets in portrait or larger phones in landscape
+    } else {
+      crossAxisCount = 2; // For phones in portrait
+    }
+
+    // Adjust childAspectRatio based on device/orientation if needed
+    double aspectRatio = 1.2; // Default for mobile/tablet
+    if (screenWidth > _tabletBreakpoint) {
+      aspectRatio = 0.9; // More square for larger screens
+    }
+
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Table ${tableNumber ?? "..."}'),
@@ -513,33 +535,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        // actions: [
-        //   Padding(
-        //     padding: const EdgeInsets.only(right: 8.0),
-        //     child: ElevatedButton.icon(
-        //       icon: const Icon(Icons.receipt, color: Colors.white),
-        //       label: const Text("Open KOT", style: TextStyle(color: Colors.white)),
-        //       onPressed: () {
-        //         Navigator.push(
-        //           context,
-        //           MaterialPageRoute(
-        //             builder: (_) => KotScreen(
-        //               branchCode: branchCode,
-        //               tableId: widget.tableId,
-        //             ),
-        //           ),
-        //         );
-        //       },
-        //       style: ElevatedButton.styleFrom(
-        //         backgroundColor: const Color(0xFFCBEEEE),
-        //         elevation: 0,
-        //         shape: RoundedRectangleBorder(
-        //           borderRadius: BorderRadius.circular(8),
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        // ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
@@ -616,9 +611,9 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(16),
         child: GridView.builder(
           itemCount: _visibleProducts.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.2,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: aspectRatio,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
@@ -627,7 +622,7 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
             return ProductCard(
               product: p,
               onAdd: () => _addProduct(p['id'], ctx, cartKey),
-              isMobileScreen: true,
+              isMobileScreen: true, // Styling for cards within this adaptive layout
             );
           },
         ),
@@ -652,16 +647,16 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
     );
   }
 
-  // --- Web Layout Specific Widget Tree ---
-  Widget _buildWebLayout() {
+  // --- Web Layout Specific Widget Tree (with integrated cart) ---
+  Widget _buildWebLayout(double screenWidth) {
     final subcategories = grouped.keys.toList();
 
     int crossAxisCount;
-    if (MediaQuery.of(context).size.width > 1400) {
+    if (screenWidth > 1400) {
       crossAxisCount = 6;
-    } else if (MediaQuery.of(context).size.width > 1000) {
+    } else if (screenWidth > _webBreakpoint) {
       crossAxisCount = 5;
-    } else {
+    } else { // This else block should ideally not be hit if conditions above are set well
       crossAxisCount = 4;
     }
 
@@ -672,33 +667,6 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        // actions: [
-        //   Padding(
-        //     padding: const EdgeInsets.only(right: 24.0),
-        //     child: ElevatedButton.icon(
-        //       icon: const Icon(Icons.receipt, color: Colors.white, size: 24),
-        //       label: const Text("Open KOTs", style: TextStyle(color: Colors.white, fontSize: 16)),
-        //       onPressed: () {
-        //         Navigator.push(
-        //           context,
-        //           MaterialPageRoute(
-        //             builder: (_) => KotScreen(
-        //               branchCode: branchCode,
-        //               tableId: widget.tableId,
-        //             ),
-        //           ),
-        //         );
-        //       },
-        //       style: ElevatedButton.styleFrom(
-        //         backgroundColor: const Color(0xFFCBEEEE),
-        //         foregroundColor: Colors.white,
-        //         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        //         elevation: 4,
-        //       ),
-        //     ),
-        //   ),
-        // ],
       ),
       body: Row(
         children: [
@@ -783,7 +751,7 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
                         return ProductCard(
                           product: p,
                           onAdd: () => _addProduct(p['id'], ctx, null),
-                          isWeb: true,
+                          isWeb: true, // Indicates full web layout for styling
                         );
                       },
                     ),
@@ -833,15 +801,15 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth > _webBreakpoint) {
-          return _buildWebLayout();
-        } else {
-          return _buildMobileLayout();
-        }
-      },
-    );
+    // Get the full screen width directly from MediaQuery
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    if (screenWidth > _webBreakpoint) {
+      return _buildWebLayout(screenWidth);
+    } else {
+      // For mobile and tablet, use the adaptive grid layout
+      return _buildAdaptiveGridLayout(screenWidth);
+    }
   }
 }
 
@@ -849,8 +817,8 @@ class _MenuPageState extends State<MenuPage> with TickerProviderStateMixin {
 class ProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
   final VoidCallback onAdd;
-  final bool isWeb;
-  final bool isMobileScreen;
+  final bool isWeb; // True if it's the full web layout (with side cart)
+  final bool isMobileScreen; // True if it's the mobile/tablet adaptive grid layout
 
   const ProductCard({
     Key? key,
@@ -910,7 +878,8 @@ class ProductCard extends StatelessWidget {
               ),
             ),
           ),
-          if (isMobileScreen)
+          // Only show add icon for mobile/tablet in the adaptive layout
+          if (isMobileScreen) // Simplified this condition
             Positioned(
               bottom: 0,
               right: 0,
@@ -935,7 +904,6 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-
 
 class AnimatedAddToCart extends StatefulWidget {
   final Offset start;

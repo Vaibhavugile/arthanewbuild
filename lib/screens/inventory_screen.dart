@@ -221,18 +221,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
               },
               tooltip: loc.toggleTheme,
             ),
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () async {
-                final result = await showSearch<String?>(
-                  context: context,
-                  delegate: InventorySearchDelegate(loc),
-                );
-                if (result != null) {
-                  setState(() => selectedItemId = result);
-                }
-              },
-            )
+            // IconButton(
+            //   icon: Icon(Icons.search),
+            //   onPressed: () async {
+            //     final result = await showSearch<String?>(
+            //       context: context,
+            //       delegate: InventorySearchDelegate(loc),
+            //     );
+            //     if (result != null) {
+            //       setState(() => selectedItemId = result);
+            //     }
+            //   },
+            // )
           ],
           flexibleSpace: isDarkMode
               ? Container(

@@ -74,25 +74,30 @@ class _BranchDashboardState extends State<BranchDashboard> {
         toolbarHeight: 90, // Keep the custom toolbar height
         title: LayoutBuilder(
           builder: (context, constraints) {
-            double imageHeight;
-            // Aiming for the logo to take up most of the 90 toolbarHeight.
-            // Let's try values closer to the toolbar height, leaving minimal padding.
-            if (constraints.maxWidth > 700) {
-              // Web view or large screen
-              imageHeight = 80; // Increased significantly for web
-            } else {
-              // Mobile view or small screen
-              imageHeight = 70; // Increased significantly for mobile
-            }
+            bool isLargeScreen = constraints.maxWidth > 700; // Define isLargeScreen here
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 0.0), // Ensure minimal vertical padding
-              child: Image.asset(
-                'assets/logoart.png', // Path to your logo image
-                height: imageHeight,
-                fit: BoxFit.fitHeight, // Ensures the image scales correctly without distortion
-              ),
-            );
+            if (isLargeScreen) {
+              // Web view or large screen - keep the logo
+              double imageHeight = 80;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 0.0),
+                child: Image.asset(
+                  'assets/logoart.png', // Path to your logo image
+                  height: imageHeight,
+                  fit: BoxFit.fitHeight,
+                ),
+              );
+            } else {
+              // Mobile view or small screen - display "Annaparcha" text
+              return Text(
+                'Annaparcha',
+                style: GoogleFonts.zillaSlab( // Using GoogleFonts for a stylish look
+                  color: Colors.amber[300], // Golden color
+                  fontSize: 28,
+                  fontWeight: FontWeight.normal,
+                ),
+              );
+            }
           },
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -114,24 +119,24 @@ class _BranchDashboardState extends State<BranchDashboard> {
               PopupMenuItem(value: 'mr', child: Text('मराठी')),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              // TODO: Add logout logic
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                isDarkMode = !isDarkMode;
-              });
-            },
-            tooltip: S.toggleTheme,
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.logout, color: Colors.white),
+          //   onPressed: () {
+          //     // TODO: Add logout logic
+          //   },
+          // ),
+          // IconButton(
+          //   icon: Icon(
+          //     isDarkMode ? Icons.light_mode : Icons.dark_mode,
+          //     color: Colors.white,
+          //   ),
+          //   onPressed: () {
+          //     setState(() {
+          //       isDarkMode = !isDarkMode;
+          //     });
+          //   },
+          //   tooltip: S.toggleTheme,
+          // ),
         ],
         flexibleSpace: isDarkMode
             ? Container(
@@ -154,7 +159,7 @@ class _BranchDashboardState extends State<BranchDashboard> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          bool isLargeScreen = constraints.maxWidth > 700;
+          bool isLargeScreen = constraints.maxWidth > 900;
 
           return Stack(
             children: [

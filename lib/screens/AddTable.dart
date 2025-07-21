@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart'; // For UserProvider
 import '../../providers/user_provider.dart';
-import'package:art/screens/billing_screen.dart';
+import 'package:art/screens/billing_screen.dart';
 
 class AddTable extends StatefulWidget {
   @override
@@ -14,6 +14,15 @@ class _AddTableState extends State<AddTable> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _tableNumberController = TextEditingController();
   bool sidebarOpen = false;
+
+  // Added isDarkMode state for AppBar theming
+  bool isDarkMode = false; // You might want to pass this from a parent widget later for consistent theme management
+
+  // Theme Colors copied from BranchDashboard
+  final Color appBarGradientStart = Color(0xFFE0FFFF); // Muted light blue
+  final Color appBarGradientMid = Color(0xFFBFEBFA); // Steel Blue
+  final Color appBarGradientEnd = Color(0xFF87CEEB); // Dark Indigo
+
 
   @override
   void initState() {
@@ -43,17 +52,16 @@ class _AddTableState extends State<AddTable> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Table added successfully")),
+          const SnackBar(content: Text('Table added successfully!')),
         );
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => BillingScreen()),
-        ); // Navigate to another screen
-      } catch (error) {
-        print("Error adding table: $error");
+        // Optionally, navigate back after adding the table
+        Navigator.pop(context);
+
+      } catch (e) {
+        print("Error adding table: $e");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error adding table")),
+          SnackBar(content: Text('Error adding table: $e')),
         );
       }
     }
@@ -63,13 +71,32 @@ class _AddTableState extends State<AddTable> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF4CB050),
+        // Removed backgroundColor and replaced with flexibleSpace for gradient/dark mode
         title: Text(
           'Add Table',
-          style: TextStyle(color: Colors.white), // 👈 Makes text white
+          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87), // Adjusted color based on dark mode
         ),
-        iconTheme: IconThemeData(color: Colors.white), // optional: makes back icon white too
-      ),       body: Padding(
+        iconTheme: IconThemeData(color: isDarkMode ? Colors.white : Colors.black87), // Adjusted color based on dark mode
+        flexibleSpace: isDarkMode // Logic copied from BranchDashboard
+            ? Container(
+          color: Colors.grey[850],
+        )
+            : Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                appBarGradientStart,
+                appBarGradientMid,
+                appBarGradientEnd,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+        ),
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -82,7 +109,7 @@ class _AddTableState extends State<AddTable> {
                   TextFormField(
                     controller: _tableNumberController,
                     decoration: InputDecoration(labelText: 'Table Number / Counter Number'),
-                    keyboardType: TextInputType.number,
+                    // keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a table number';

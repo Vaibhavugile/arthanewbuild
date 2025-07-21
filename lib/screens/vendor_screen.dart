@@ -128,31 +128,31 @@ class _VendorScreenState extends State<VendorScreen> {
               },
               tooltip: loc.toggleTheme,
             ),
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () async {
-                final result = await showSearch<String?>(
-                  context: context,
-                  delegate: VendorSearchDelegate(loc),
-                );
-                if (result != null) {
-                  // If a search result is selected, navigate to its detail screen
-                  final selectedVendor = vendors.firstWhere((v) => v['id'] == result);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VendorDetailScreen(
-                        vendor: selectedVendor,
-                        stockDetails: List<Map<String, dynamic>>.from(selectedVendor['stockDetails'] ?? []),
-                        comments: List<Map<String, dynamic>>.from(selectedVendor['comments'] ?? []),
-                        isDarkMode: isDarkMode,
-                        onVendorUpdate: fetchVendors, // Pass callback to refresh vendors
-                      ),
-                    ),
-                  );
-                }
-              },
-            )
+            // IconButton(
+            //   icon: Icon(Icons.search),
+            //   onPressed: () async {
+            //     final result = await showSearch<String?>(
+            //       context: context,
+            //       delegate: VendorSearchDelegate(loc),
+            //     );
+            //     if (result != null) {
+            //       // If a search result is selected, navigate to its detail screen
+            //       final selectedVendor = vendors.firstWhere((v) => v['id'] == result);
+            //       Navigator.push(
+            //         context,
+            //         MaterialPageRoute(
+            //           builder: (context) => VendorDetailScreen(
+            //             vendor: selectedVendor,
+            //             stockDetails: List<Map<String, dynamic>>.from(selectedVendor['stockDetails'] ?? []),
+            //             comments: List<Map<String, dynamic>>.from(selectedVendor['comments'] ?? []),
+            //             isDarkMode: isDarkMode,
+            //             onVendorUpdate: fetchVendors, // Pass callback to refresh vendors
+            //           ),
+            //         ),
+            //       );
+            //     }
+            //   },
+            // )
           ],
           flexibleSpace: isDarkMode
               ? Container(

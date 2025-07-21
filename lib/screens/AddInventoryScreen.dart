@@ -72,6 +72,8 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
     }
   }
 
+// ... existing code ...
+
   Future<void> _handleAddIngredient() async {
     final loc = AppLocalizations.of(context)!;
     final name = _ingredientNameController.text.trim();
@@ -118,7 +120,23 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       return;
     }
 
-    final standardized = _convertQuantity(qty);
+    double standardizedQuantity = qty;
+    String finalUnit = _unit; // Store the original unit temporarily
+
+    // Perform conversion and update finalUnit accordingly
+    switch (_unit) {
+      case 'kilograms':
+        standardizedQuantity = qty * 1000;
+        finalUnit = 'grams';
+        break;
+      case 'liters':
+        standardizedQuantity = qty * 1000;
+        finalUnit = 'milliliters';
+        break;
+    // No conversion needed for 'grams', 'milliliters', 'pieces', 'boxes'
+      default:
+        break;
+    }
 
     try {
       final invRef = FirebaseFirestore.instance
@@ -128,14 +146,15 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       final docRef = await invRef.add({
         'ingredientName': name,
         'category': cat,
-        'quantity': standardized,
-        'unit': _unit,
+        'quantity': standardizedQuantity, // Use the converted quantity
+        'unit': finalUnit, // Use the updated unit
       });
       await docRef.collection('History').add({
-        'quantityAdded': standardized,
-        'updatedQuantity': standardized,
+        'quantityAdded': standardizedQuantity,
+        'updatedQuantity': standardizedQuantity,
         'action': 'Add Inventory',
         'updatedAt': DateTime.now(),
+        'unit': finalUnit, // Also update unit in history
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,6 +169,8 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       setState(() => _isLoading = false); // Ensure loading is false after operation
     }
   }
+
+// ... existing code ...
 
   Widget _buildTextField({
     required String label,

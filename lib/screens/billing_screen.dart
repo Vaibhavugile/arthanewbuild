@@ -22,6 +22,7 @@ class BillingScreen extends StatefulWidget {
 class _BillingScreenState extends State<BillingScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   late String branchCode;
+  String branchName = ''; // Added to store branch name
 
   List<Map<String, dynamic>> tables = [];
   Map<String, dynamic>? selectedTable;
@@ -54,13 +55,28 @@ class _BillingScreenState extends State<BillingScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize branchCode directly in initState
-    // Provider.of can be used in initState with listen: false to access data
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    branchCode = userProvider.branchCode!; // Initialize branchCode here
-
-    // Now that branchCode is initialized, you can safely call fetchTables
+    branchCode = userProvider.branchCode!;
     fetchTables();
+    fetchBranchDetails(); // Fetch branch details here
+  }
+
+  // New function to fetch branch details
+  Future<void> fetchBranchDetails() async {
+    try {
+      final docSnapshot = await _db.collection('branches').doc(branchCode).get();
+      if (docSnapshot.exists) {
+        setState(() {
+          branchName = docSnapshot.data()?['branchName'] ?? 'My Fine Dine';
+        });
+      }
+      print("Fetched branch name: $branchName");
+    } catch (e) {
+      print("Error fetching branch details: $e");
+      setState(() {
+        branchName = 'My Fine Dine'; // Fallback
+      });
+    }
   }
 
 
@@ -232,7 +248,7 @@ class _BillingScreenState extends State<BillingScreen> {
       return null;
     }
   }
-
+// Modified printReceipt to accept branchName
   Future<void> printReceipt(BuildContext context, Map<String, dynamic> table) async {
     try {
       // Check if printer is already saved
@@ -264,47 +280,79 @@ class _BillingScreenState extends State<BillingScreen> {
       bluetoothPrinter.printNewLine();
 
       // Header
-      bluetoothPrinter.printCustom("My Fine Dine", 3, 1);
+      bluetoothPrinter.printCustom(branchName, 3, 1); // Use branchName here
       // bluetoothPrinter.printCustom("Branch: $branchCode", 1, 1);
+      bluetoothPrinter.printNewLine();
       bluetoothPrinter.printCustom("Date: ${dateTime.toLocal().toString().split('.').first}", 1, 1);
       bluetoothPrinter.printNewLine();
 
       // Order Info
       bluetoothPrinter.printCustom("Table No: $tableNumber", 1, 0);
-     // bluetoothPrinter.printCustom("Status: $orderStatus", 1, 0);
-     // bluetoothPrinter.printCustom("Payment: $paymentMethod", 1, 0);
+      // bluetoothPrinter.printCustom("Status: $orderStatus", 1, 0);
+      // bluetoothPrinter.printCustom("Payment: $paymentMethod", 1, 0);
       bluetoothPrinter.printNewLine();
 
-      // Item list header
-      bluetoothPrinter.printCustom("--------------------------------", 1, 1);
-      bluetoothPrinter.printCustom("Item        Qty  Price  Total", 1, 0);
-      bluetoothPrinter.printCustom("--------------------------------", 1, 1);
+      // Item list header and separator lines (32 characters wide)
+      bluetoothPrinter.printCustom("--------------------------------", 1, 1); // 32 hyphens
+      // Manually format the header for a 32-character width
+      bluetoothPrinter.printCustom("Item            Qty   Price   Total", 1, 0); // Exactly 32 characters
+      bluetoothPrinter.printCustom("--------------------------------", 1, 1); // 32 hyphens
+
+      // Define the maximum characters for the item name on a single line.
+      const int maxNameLength = 14; // Adjusted to fit within 32 total characters including 1 space between columns.
+      const int qtyColumnWidth = 3;
+      const int priceColumnWidth = 6;
+      const int totalColumnWidth = 6;
+
+      // The effective content width of an item line (excluding leading/trailing spaces if any)
+      const int dataLineContentWidth = maxNameLength + 1 + qtyColumnWidth + 1 + priceColumnWidth + 1 + totalColumnWidth; // 14 + 1 + 3 + 1 + 6 + 1 + 6 = 32
 
       for (var order in orders) {
-        final name = (order['name'] ?? 'Unknown').toString().padRight(12).substring(0, 12);
+        String productName = order['name'] ?? 'Unknown';
         final quantity = int.tryParse(order['quantity'].toString()) ?? 0;
         final price = double.tryParse(order['price'].toString()) ?? 0.0;
-        final lineTotal = (quantity * price).toStringAsFixed(2).padLeft(6);
-        final qtyStr = quantity.toString().padLeft(3);
-        final priceStr = price.toStringAsFixed(2).padLeft(6);
+        final lineTotal = (quantity * price).toStringAsFixed(2).padLeft(totalColumnWidth);
+        final qtyStr = quantity.toString().padLeft(qtyColumnWidth);
+        final priceStr = price.toStringAsFixed(2).padLeft(priceColumnWidth);
 
-        final line = "$name $qtyStr $priceStr $lineTotal";
-        bluetoothPrinter.printCustom(line, 1, 0);
+        // Check if the product name is too long and needs wrapping
+        if (productName.length > maxNameLength) {
+          // Print the first part of the name with quantity, price, and total
+          String firstLineName = productName.substring(0, maxNameLength);
+          String remainingName = productName.substring(maxNameLength);
+
+          // Construct the first line: Name (padded) + space + Qty + space + Price + space + Total
+          String line = "${firstLineName.padRight(maxNameLength)} ${qtyStr} ${priceStr} ${lineTotal}";
+          bluetoothPrinter.printCustom(line, 1, 0); // Use ALIGN_LEFT and rely on manual padding
+
+          // Print subsequent lines for the remaining part of the name
+          // These lines will fill the full 'totalReceiptWidth' (32 chars)
+          const int wrapLineLength = 32; // Max characters for wrapped lines
+          while (remainingName.isNotEmpty) {
+            String part = remainingName.substring(0, remainingName.length > wrapLineLength ? wrapLineLength : remainingName.length);
+            bluetoothPrinter.printCustom(part.padRight(wrapLineLength), 1, 0); // Pad to ensure full line width
+            remainingName = remainingName.substring(part.length);
+          }
+        } else {
+          // If the name fits, print it normally, padded to align
+          final name = productName.padRight(maxNameLength);
+          // Construct the line: Name (padded) + space + Qty + space + Price + space + Total
+          String line = "${name} ${qtyStr} ${priceStr} ${lineTotal}"; // This will be dataLineContentWidth (32) chars
+          bluetoothPrinter.printCustom(line, 1, 0); // Use ALIGN_LEFT and rely on manual padding
+        }
+        bluetoothPrinter.printNewLine(); // Add a new line after each product
       }
 
       bluetoothPrinter.printCustom("--------------------------------", 1, 1);
 
-      // Totals
-      //final tax = totalPrice * 0.05;
-    //  const discount = 0.0;
-    //  final grandTotal = totalPrice + tax - discount;
+      // Totals Section
+      String subtotalLabel = "Subtotal";
+      String subtotalAmount = totalPrice.toStringAsFixed(2).padLeft(totalColumnWidth);
 
-      bluetoothPrinter.printCustom("Subtotal           ${totalPrice.toStringAsFixed(2)}", 1, 2);
-     // bluetoothPrinter.printCustom("Tax (5%)           ${tax.toStringAsFixed(2)}", 1, 2);
-      //if (discount > 0) {
-      //  bluetoothPrinter.printCustom("Discount          -${discount.toStringAsFixed(2)}", 1, 2);
-      // }
-     // bluetoothPrinter.printCustom("Total              ${grandTotal.toStringAsFixed(2)}", 2, 2);
+      int spacesNeeded = dataLineContentWidth - subtotalLabel.length - subtotalAmount.length;
+      String subtotalLine = subtotalLabel + " " * spacesNeeded + subtotalAmount;
+
+      bluetoothPrinter.printCustom(subtotalLine, 1, 0);
       bluetoothPrinter.printNewLine();
 
       // Footer
@@ -320,7 +368,6 @@ class _BillingScreenState extends State<BillingScreen> {
       Fluttertoast.showToast(msg: "Error printing receipt: $e");
     }
   }
-
 
 
 
@@ -532,41 +579,41 @@ class _BillingScreenState extends State<BillingScreen> {
                         Text('₹${totalPrice.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, color: isDarkMode ? darkModeTextColor : lightModeTextColor)),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('${loc.discounted}:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDarkMode ? darkModeTextColor : lightModeTextColor)),
-                        Text('₹${discountedPrice.toStringAsFixed(2)}',
-                            style: TextStyle(fontSize: 16, color: Colors.green.shade700)), // Keep green for positive effect
-                      ],
-                    ),
+                    // const SizedBox(height: 4),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //   children: [
+                    //     Text('${loc.discounted}:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDarkMode ? darkModeTextColor : lightModeTextColor)),
+                    //     Text('₹${discountedPrice.toStringAsFixed(2)}',
+                    //         style: TextStyle(fontSize: 16, color: Colors.green.shade700)), // Keep green for positive effect
+                    //   ],
+                    // ),
                     const SizedBox(height: 20),
 
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: '${loc.discount} %',
-                        prefixIcon: Icon(Icons.percent, color: isDarkMode ? darkModeIconColor : lightModeIconColor),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        labelStyle: TextStyle(color: isDarkMode ? darkModeCardTextColor : lightModeCardTextColor),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDarkMode ? darkModeCardTextColor : Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDarkMode ? fabColor : Colors.blue.shade700),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      style: TextStyle(color: isDarkMode ? darkModeTextColor : lightModeTextColor),
-                      onChanged: (val) {
-                        modalSetState(() {
-                          discountPercentage = double.tryParse(val) ?? 0.0;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
+                    // TextField(
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: InputDecoration(
+                    //     labelText: '${loc.discount} %',
+                    //     prefixIcon: Icon(Icons.percent, color: isDarkMode ? darkModeIconColor : lightModeIconColor),
+                    //     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    //     labelStyle: TextStyle(color: isDarkMode ? darkModeCardTextColor : lightModeCardTextColor),
+                    //     enabledBorder: OutlineInputBorder(
+                    //       borderSide: BorderSide(color: isDarkMode ? darkModeCardTextColor : Colors.grey.shade400),
+                    //       borderRadius: BorderRadius.circular(12),
+                    //     ),
+                    //     focusedBorder: OutlineInputBorder(
+                    //       borderSide: BorderSide(color: isDarkMode ? fabColor : Colors.blue.shade700),
+                    //       borderRadius: BorderRadius.circular(12),
+                    //     ),
+                    //   ),
+                    //   style: TextStyle(color: isDarkMode ? darkModeTextColor : lightModeTextColor),
+                    //   onChanged: (val) {
+                    //     modalSetState(() {
+                    //       discountPercentage = double.tryParse(val) ?? 0.0;
+                    //     });
+                    //   },
+                    // ),
+                    // const SizedBox(height: 24),
 
                     Text('${loc.paymentMethod}:', style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? darkModeTextColor : lightModeTextColor)),
                     const SizedBox(height: 8),
@@ -669,7 +716,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLargeScreen = MediaQuery.of(context).size.width > 700;
+    final bool isLargeScreen = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       backgroundColor: isDarkMode ? darkModeBackgroundColor : lightModeBackgroundColor,
@@ -677,10 +724,7 @@ class _BillingScreenState extends State<BillingScreen> {
           ? null // No AppBar on large screens (web)
           : AppBar(
         backgroundColor: isDarkMode ? darkModeAppBarColor : lightModeAppBarColor,
-        title: Text(
-          'La Casa',
-          style: TextStyle(color: isDarkMode ? darkModeTextColor : lightModeTextColor),
-        ),
+
         iconTheme: IconThemeData(color: isDarkMode ? darkModeIconColor : lightModeIconColor),
         actions: [
           IconButton(

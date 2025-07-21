@@ -327,10 +327,10 @@ class _OrderReportScreenState extends State<OrderReportScreen> {
               },
               tooltip: _localization?.toggleTheme,
             ),
-            IconButton(
-                icon: const Icon(Icons.download),
-                color: isDarkMode ? Colors.white : Colors.black87,
-                onPressed: () => exportOrderPDF(context, filteredHistory)),
+            // IconButton(
+            //     icon: const Icon(Icons.download),
+            //     color: isDarkMode ? Colors.white : Colors.black87,
+            //     onPressed: () => exportOrderPDF(context, filteredHistory)),
           ],
           flexibleSpace: isDarkMode
               ? Container(
